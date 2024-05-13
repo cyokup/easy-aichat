@@ -1,0 +1,25 @@
+{
+    "name": "cyokup/easy-aichat",
+    "description": "easy-aichat",
+    "keywords": [
+        "ai",
+        "chat"
+    ],
+    "license": "MIT",
+    "autoload": {
+        "psr-4": {
+            "Cyokup\\EasyAiChat\\": "src/"
+        }
+    },
+    "authors": [
+        {
+            "name": "cody",
+            "email": "648753004@qq.com"
+        }
+    ],
+    "minimum-stability": "stable",
+    "require": {
+        "php": "^7.2|^8.0",
+        "guzzlehttp/guzzle": "^7.0.1"
+    }
+}
