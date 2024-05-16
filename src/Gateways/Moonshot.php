@@ -7,29 +7,22 @@ use GuzzleHttp\RequestOptions;
 
 class Moonshot extends Gateway
 {
-    /**
-     * 设置认证的头信息
-     * @return string[]
-     */
-    private function setHeader()
-    {
-        return [
-            'Content-Type' => 'application/json',
-            'Authorization' => "Bearer " . $this->config->get('key')
-        ];
-    }
-
-    public function chat($content)
+    public function chat($content, $parameters = [])
     {
         $client = new Client();
+        $header = [
+            'Content-Type' => 'application/json',
+            'Authorization' => "Bearer " . $this->config->get('api_key')
+        ];
         $body = [
-            'model' => 'moonshot-v1-8k',
-            'messages' => [['role' => 'user', 'content' => $content]],
-            'temperature' => 0.3
+            'model' => $parameters['model'] ?? 'moonshot-v1-8k',
+            'messages' => [$content],
+            'temperature' => $parameters['temperature'] ?? 0.3,
+            'stream' => $parameters['stream'] ?? 'false',
         ];
         try {
             $response = $client->post('https://api.moonshot.cn/v1/chat/completions', [
-                'headers' => $this->setHeader(),
+                'headers' => $header,
                 RequestOptions::JSON => $body,
             ]);
             // 获取响应内容

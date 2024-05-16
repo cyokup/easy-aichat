@@ -7,30 +7,27 @@ use GuzzleHttp\RequestOptions;
 
 class Qwen extends Gateway
 {
-    /**
-     * 设置认证的头信息
-     * @return string[]
-     */
-    private function setHeader()
-    {
-        return [
-            'Content-Type' => 'application/json',
-            'Authorization' => "Bearer " . $this->config->get('key')
-        ];
-    }
 
-    public function chat($content)
+    public function chat($content, $parameters = [])
     {
         $client = new Client();
+        $header = [
+            'Content-Type' => 'application/json',
+            'Authorization' => "Bearer " . $this->config->get('api_key')
+        ];
+        // 流式输出
+        if ($parameters['stream']) {
+            $header['X-DashScope-SSE'] = 'enable';
+        }
         $body = [
-            'model' => 'qwen-turbo',
+            'model' => $parameters['model'] ?? 'qwen-turbo',
             'input' => [
-                'messages' => [['role' => 'user', 'content' => $content]]
+                'messages' => [$content]
             ]
         ];
         try {
             $response = $client->post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', [
-                'headers' => $this->setHeader(),
+                'headers' => $header,
                 RequestOptions::JSON => $body,
             ]);
             // 获取响应内容
@@ -46,11 +43,11 @@ class Qwen extends Gateway
 
     }
 
-    public function embeddings($content)
+    public function embeddings($content, $parameters = [])
     {
         $client = new  Client();
         $body = [
-            'model' => 'text-embedding-v1',
+            'model' => $parameters['model'] ?? 'text-embedding-v1',
             'type' => 'db',
             'input' => [
                 'texts' => [$content]
@@ -58,18 +55,21 @@ class Qwen extends Gateway
         ];
         try {
             $response = $client->post('https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', [
-                'headers' => $this->setHeader(),
+                'headers' => [
+                    'Content-Type' => 'application/json',
+                    'Authorization' => "Bearer " . $this->config->get('api_key')
+                ],
                 RequestOptions::JSON => $body,
             ]);
             // 获取响应内容
             $responseData = $response->getBody()->getContents();
             $result = json_decode($responseData, true);
             if (isset($result['usage']['total_tokens']) && isset($result['output']['embeddings'][0]['embedding'])) {
-                return $result['output']['embeddings'][0]['embedding'];
+                return [$result['output']['embeddings'][0]['embedding'], $result['usage']['total_tokens']];
             }
-            return $result['message'];
+            return [$result['message'], 0];
         } catch (\Exception $e) {
-            return $e->getMessage();
+            return [$e->getMessage(), 0];
         }
     }
 }

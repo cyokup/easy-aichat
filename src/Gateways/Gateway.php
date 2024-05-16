@@ -22,12 +22,12 @@ abstract class Gateway
      * @param $content
      * @return mixed
      */
-    abstract public function embeddings($content);
+    abstract public function embeddings($content, $parameters = []);
 
     /**
      * 聊天方法
      * @return mixed
      */
-    abstract public function chat($content);
+    abstract public function chat($content, $parameters = []);
 
 }
