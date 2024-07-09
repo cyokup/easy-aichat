@@ -2,8 +2,6 @@
 
 namespace Cyokup\EasyAiChat\Support;
 
-use ArrayAccess;
-
 /**
  * Class Config.
  */

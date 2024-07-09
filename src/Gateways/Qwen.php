@@ -1,73 +1,60 @@
 <?php
+/**
+ * 通义千问
+ */
 
 namespace Cyokup\EasyAiChat\Gateways;
 
-use GuzzleHttp\Client;
-use GuzzleHttp\RequestOptions;
-
 class Qwen extends Gateway
 {
-
-    public function chat($content, $parameters = [])
+    public function chat($content, $parameters = [], $stream = false)
     {
-        $client = new Client();
-        $header = [
-            'Content-Type' => 'application/json',
-            'Authorization' => "Bearer " . $this->config->get('api_key')
-        ];
+        $baseUrl = "https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation";
+        $header[] = "Authorization:Bearer " . $this->config->get('api_key');
+        $header[] = "Content-Type:application/json";
         // 流式输出
-        if ($parameters['stream']) {
+        if ($stream) {
             $header['X-DashScope-SSE'] = 'enable';
         }
-        $body = [
+        $params = [
             'model' => $parameters['model'] ?? 'qwen-turbo',
             'input' => [
-                'messages' => [$content]
+                'messages' => $content
             ]
         ];
+        $params = json_encode($params, JSON_UNESCAPED_UNICODE);
         try {
-            $response = $client->post('https://dashscope.aliyuncs.com/api/v1/services/aigc/text-generation/generation', [
-                'headers' => $header,
-                RequestOptions::JSON => $body,
-            ]);
-            // 获取响应内容
-            $responseData = $response->getBody()->getContents();
-            $result = json_decode($responseData, true);
+            $result = $this->httpCurl($baseUrl, 'POST', $params, $header);
+            $result = json_decode($result, true);
             if (isset($result['output']['text'])) {
-                return $result['output']['text'];
+                return [$result['output']['text'], $result['usage']['total_tokens']];
             }
-            return $result['message'];
+            return [$result['message'] ?? 'data error', 0];
         } catch (\Exception $e) {
-            return $e->getMessage();
+            return [$e->getMessage(), 0];
         }
-
     }
 
     public function embeddings($content, $parameters = [])
     {
-        $client = new  Client();
-        $body = [
+        $baseUrl = "https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding";
+        $header[] = "Authorization:Bearer " . $this->config->get('api_key');
+        $header[] = "Content-Type:application/json";
+        $params = [
             'model' => $parameters['model'] ?? 'text-embedding-v1',
             'type' => 'db',
             'input' => [
                 'texts' => [$content]
             ],
         ];
+        $params = json_encode($params, JSON_UNESCAPED_UNICODE);
         try {
-            $response = $client->post('https://dashscope.aliyuncs.com/api/v1/services/embeddings/text-embedding/text-embedding', [
-                'headers' => [
-                    'Content-Type' => 'application/json',
-                    'Authorization' => "Bearer " . $this->config->get('api_key')
-                ],
-                RequestOptions::JSON => $body,
-            ]);
-            // 获取响应内容
-            $responseData = $response->getBody()->getContents();
-            $result = json_decode($responseData, true);
+            $result = $this->httpCurl($baseUrl, 'POST', $params, $header);
+            $result = json_decode($result, true);
             if (isset($result['usage']['total_tokens']) && isset($result['output']['embeddings'][0]['embedding'])) {
                 return [$result['output']['embeddings'][0]['embedding'], $result['usage']['total_tokens']];
             }
-            return [$result['message'], 0];
+            return [['data error'], 0];
         } catch (\Exception $e) {
             return [$e->getMessage(), 0];
         }

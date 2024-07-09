@@ -3,12 +3,14 @@
 namespace Cyokup\EasyAiChat\Gateways;
 
 use Cyokup\EasyAiChat\Support\Config;
+use Cyokup\EasyAiChat\Traits\Helper;
 
 /**
  * 抽象类，定位必须实现的方法和共享的方法
  */
 abstract class Gateway
 {
+    use Helper;
 
     public $config;
 
@@ -28,6 +30,6 @@ abstract class Gateway
      * 聊天方法
      * @return mixed
      */
-    abstract public function chat($content, $parameters = []);
+    abstract public function chat($content, $parameters = [], $stream = false);
 
 }
